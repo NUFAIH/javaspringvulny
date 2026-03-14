@@ -3,7 +3,7 @@ package hawk.service;
 import hawk.entity.Item;
 import hawk.form.Search;
 import org.hibernate.Session;
-import org.hibernate.jdbc.ReturningWork;
+import org.hibernate.jdbc.ReturningWork;    
 import org.springframework.beans.factory.annotation.Autowired;
 import javax.persistence.EntityManager;
 import java.sql.Connection;
@@ -29,22 +29,16 @@ public class SearchService {
             @Override
             public List<Item> execute(Connection connection) throws SQLException {
                 List<Item> items = new ArrayList<>();
-                // The wrong way
-                String query = "select id, name, description from ITEM where description like '%" +
-                        search.getSearchText() + "%'";
-
-                LOGGER.log(Level.INFO, "SQL Query: {0}",  query);;
-                ResultSet rs = connection
-                        .createStatement()
-                        .executeQuery(query);
-
-                /* The righter way, should probably use built in Data Model for this, but this is safe
+                
+                // The correct, secure way using PreparedStatement
                 String query = "select id, name, description from ITEM where description like ?";
                 PreparedStatement statement = connection.prepareStatement(query);
+                
+                // Safely binds the user input to the query parameter
                 statement.setString(1, "%" + search.getSearchText() + "%");
+                
                 LOGGER.log(Level.INFO, "SQL Query {0}",  statement);
                 ResultSet rs = statement.executeQuery();
-                */
 
                 while (rs.next()) {
                     items.add(new Item(rs.getLong("id"), rs.getString("name"), rs.getString("description")));
@@ -53,8 +47,5 @@ public class SearchService {
                 return items;
             }
         });
-
     }
-
-
 }
