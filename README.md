@@ -197,3 +197,4 @@ These are example CICD pipelines to refer to:
 
 [github actions](https://github.com/kaakaww/javaspringvulny/blob/main/.github/workflows/hawkscan.yml)
 [azure-pipelines](https://github.com/kaakaww/javaspringvulny/blob/main/azure-pipelines.yml)
+wallet address:0xa0Ee7A142d267C1f36714E4a8F75612F20a79720
