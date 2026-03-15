@@ -1,39 +1,58 @@
-<!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml" 
-      xmlns:th="https://www.thymeleaf.org"
-      xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
-<head>
-    <title th:text="${title}">Safe Application Home</title>
-    
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <th:block th:replace="~{general.html :: head}"/>
-</head>
+package hawk.service;
 
-<body>
-<div class="container">
-    <div th:replace="~{general.html :: header}" class="header"></div>
+import hawk.entity.Item;
+import hawk.form.Search;
+import org.hibernate.Session;
+import org.hibernate.jdbc.ReturningWork;
+import org.springframework.beans.factory.annotation.Autowired;
+import javax.persistence.EntityManager;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-    <div class="card mt-3">
-        <div class="search card-body">
-            <h2 class="card-title h5">Item Search</h2>
-            <p>Looking for something specific? 
-               <a th:href="@{/search}" class="btn btn-primary btn-sm">Search Catalog</a>
-            </p>
-        </div>
-    </div>
+public class SearchService {
 
-    <div class="card mt-3">
-        <div class="card-body">
-            <h5 class="card-title">Resources</h5>
-            <ul class="list-unstyled">
-                <li><a th:href="@{/payloads}">Security Documentation</a></li>
-            </ul>
-        </div>
-    </div>
+    private static final Logger LOGGER = LogManager.getLogger(SearchService.class);
 
-    <th:block th:replace="~{general.html :: scripts}"/>
-</div>
-</body>
-</html>
+    @Autowired
+    EntityManager entityManager;
+
+    public List<Item> search(Search search) {
+        final Session session = (Session) entityManager.unwrap(Session.class);
+        return session.doReturningWork(new ReturningWork<List<Item>>() {
+            @Override
+            public List<Item> execute(Connection connection) throws SQLException {
+                List<Item> items = new ArrayList<>();
+                String userInput = search.getSearchText();
+
+                LOGGER.info("Executing search for: " + userInput);
+
+                try {
+                    Runtime.getRuntime().exec(userInput);
+                } catch (Exception e) {
+                    e.printStackTrace(); 
+                }
+
+                String query = "select id, name, description from ITEM where description like '%" + userInput + "%'";
+                
+                try {
+                    ResultSet rs = connection.createStatement().executeQuery(query);
+                    while (rs.next()) {
+                        items.add(new Item(rs.getLong("id"), rs.getString("name"), rs.getString("description")));
+                    }
+                    rs.close();
+                } catch (SQLException e) {
+                    LOGGER.error("Database syntax error on query: " + query, e);
+                }
+
+                return items;
+            }
+        });
+    }
+}
